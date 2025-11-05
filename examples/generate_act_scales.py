@@ -6,14 +6,13 @@ from transformers import (
     AutoTokenizer,
 )
 import argparse
-
-from smoothquant.calibration import get_act_scales
+from smoothquant.calibration import get_act_svd
 
 
 def build_model_and_tokenizer(model_name):
-    tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512, trust_remote_code=True)
     kwargs = {"torch_dtype": torch.float16, "device_map": "sequential"}
-    model = AutoModelForCausalLM.from_pretrained(model_name, **kwargs)
+    model = AutoModelForCausalLM.from_pretrained(model_name, **kwargs, trust_remote_code=True)
     return model, tokenizer
 
 
@@ -25,8 +24,8 @@ def parse_args():
     parser.add_argument(
         "--output-path",
         type=str,
-        default="act_scales/opt-1.3b.pt",
-        help="where to save the act scales",
+        default="act_scales/opt-1.3b-svd.pt", 
+        help="where to save the SVD whitening factors",
     )
     parser.add_argument(
         "--dataset-path",
@@ -53,12 +52,13 @@ def main():
         )
         raise FileNotFoundError
 
-    act_scales = get_act_scales(
+    act_scales = get_act_svd(
         model, tokenizer, args.dataset_path, args.num_samples, args.seq_len
     )
 
     os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
     torch.save(act_scales, args.output_path)
+    print(f"SVD whitening factors saved to {args.output_path}")
 
 
 if __name__ == "__main__":
