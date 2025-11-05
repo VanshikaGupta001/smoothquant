@@ -104,6 +104,12 @@ def get_act_svd(model, tokenizer, dataset_path, num_samples=512, seq_len=512):
             S_scaling = (sqrt_Sigma @ U.T).cpu()
             # S_scaling_inv = U * Sigma^(-1/2)
             S_scaling_inv = (U @ Sigma_inv_sqrt).cpu()
+
+            # gave worst results even worse than the cholesky decompn 
+            # S_scaling = U * sqrt(Sigma) 
+            # S_scaling = (U.T @ sqrt_Sigma).cpu()
+            # S_scaling_inv =  Sigma^(-1/2) * U^T
+            # S_scaling_inv = (Sigma_inv_sqrt @ U.T).cpu()
             
         except torch.linalg.LinAlgError as e:
             print(f"FATAL: SVD failed for {name}: {e}")
